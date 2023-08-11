@@ -4,7 +4,7 @@ import openai
 
 app = Flask(__name__)
 # OpenAI API 키 설정
-openai.api_key = "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"
+openai.api_key = "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"
 
 # ChatGPT와 상호작용하는 함수
 def chat_with_gpt(prompt):
