@@ -1,10 +1,10 @@
+import os
 from flask import Flask, jsonify, request
 import openai
 
 app = Flask(__name__)
-
 # OpenAI API 키 설정
-openai.api_key = "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"
+openai.api_key = "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"
 
 # ChatGPT와 상호작용하는 함수
 def chat_with_gpt(prompt):
@@ -32,22 +32,3 @@ def chat():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8600, debug=True)
-
-
-
-# import openai
-# openai.api_key = "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"
-#
-# messages = []
-# while True:
-#     content = input("user : ")
-#     messages.append({'role': 'user', 'content': content})
-#
-#     completion = openai.ChatCompletion.create(
-#         model='gpt-3.5-turbo',
-#         messages=messages
-#     )
-#
-#     chat_response = completion.choices[0].message.content
-#     print(f'ChatGPT : {chat_response}')
-#     messages.append({'role': 'assistant', 'content : ': chat_response})
