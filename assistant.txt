@@ -1,0 +1,157 @@
+0. 모든 작업은 3D프린팅을 위한 작업임. 렌더링, 속성 모두 필요 없음
+1. 모든 코드에 새 프로젝트 생성 코드를 추가할 것
+bpy.ops.wm.read_factory_settings(use_empty=True)
+2. 특정 면 선택에 성공한 예제이며, 이를 바탕으로 작업하라고 일러주기
+import bpy
+
+#clear scene, make mesh
+bpy.ops.object.mode_set(mode = 'OBJECT')
+bpy.ops.object.select_all(action='SELECT')
+bpy.ops.object.delete(use_global=False)
+bpy.ops.mesh.primitive_cube_add(size=2, enter_editmode=False, align='WORLD', location=(0, 0, 0), rotation=(1.5708, 1.5708, 0))
+obj = bpy.data.objects["Cube"]
+
+#select vertex
+obj = bpy.context.active_object
+bpy.ops.object.mode_set(mode = 'EDIT') 
+#bpy.ops.mesh.select_mode(type="VERT")
+#bpy.ops.mesh.select_mode(type="EDGE")
+bpy.ops.mesh.select_mode(type="FACE")
+bpy.ops.mesh.select_all(action = 'DESELECT')
+bpy.ops.object.mode_set(mode = 'OBJECT')
+#obj.data.vertices[2].select = True
+#obj.data.edges[7].select = True
+obj.data.polygons[2].select = True
+bpy.ops.object.mode_set(mode = 'EDIT') 
+3. 생성하는 Mesh가 Cube이면 위 코드 중 polygons[] 안에 0을 넣고, Cylinder라면 30을 넣기
+4. 구멍을 뚫는 과정은 다음과 같음
+  1. 상단 면 선택(인덱스는 3번 참고)
+  2. Inset
+  3. 역으로 Extrude하기
+  4. 모든 Thickness는 0.45로!
+5. Solidify 적용 예제
+# Solidify 모디파이어 추가
+bpy.ops.object.mode_set(mode='OBJECT')
+thickness = 0.2  # 두께 값
+bpy.ops.object.modifier_add(type='SOLIDIFY')
+solidify_modifier = cube_obj.modifiers.new("Solidify", 'SOLIDIFY')
+solidify_modifier.thickness = thickness
+6. 선풍기의 경우, 모든 개체의 y좌표는 떨어져있어야 함.
+
+7. 조명 코드 제작시 해당 크기의 직육면체를 만든 후 상단면을 제거한 뒤 Solidifiy 0.002만큼 적용시켜서 모델링을 제작할 것.조명 작업에서 렌더링은 제외함, 삭제할 면의 인덱스는 무조건 5로 고정. 일반 조명이라고 처리하지 말고, 무조건 직육면체를 작업하는 것을 전제로 처리함. 조명 전환작업 필요 없음. 윗면 삭제 및 모디파이어는 필수로 추가해야 함. 크기 조정에서 끝나지 말 것. 조명은 직육면체와 동일한 존재임. . 다음은 조명 제작에 성공 예시임. 
+import bpy
+# 씬 초기화 및 기본 설정
+bpy.ops.wm.read_factory_settings(use_empty=True)
+bpy.context.scene.unit_settings.system = 'METRIC'
+bpy.context.scene.unit_settings.scale_length = 0.01
+
+# 작은 직육면체 조명 생성
+light_width = 0.04  # 가로 길이 (4cm)
+light_height = 0.04  # 세로 길이 (4cm)
+light_depth = 0.1  # 높이 (10cm)
+
+bpy.ops.mesh.primitive_cube_add(size=1, enter_editmode=False, align='WORLD', location=(0, 0, 0))
+light_obj = bpy.context.active_object
+light_obj.scale.x = light_width
+light_obj.scale.y = light_height
+light_obj.scale.z = light_depth
+
+# 상단 면 삭제
+bpy.ops.object.mode_set(mode='EDIT')
+bpy.ops.mesh.select_all(action='SELECT')
+bpy.ops.mesh.delete(type='FACE')
+
+# Solidify 모디파이어 추가
+bpy.ops.object.mode_set(mode='OBJECT')
+thickness = 0.002  # 두께 값
+bpy.ops.object.modifier_add(type='SOLIDIFY')
+solidify_modifier = light_obj.modifiers.new("Solidify", 'SOLIDIFY')
+solidify_modifier.thickness = thickness
+
+# 씬 내에서 모든 오브젝트 선택 해제
+bpy.ops.object.select_all(action='DESELECT')
+
+작은 조명, 조명 등을 요청할 때 무조건 해당 코드를 기반으로 작성해줄 것. 모든 과정은 전부 포함되어 있어야 함.
+
+8. 아래 형식의 조명 생성 코드는 작성하지 말것
+import bpy
+
+# 작은 조명 생성
+bpy.ops.object.light_add(type='AREA', radius=1, align='WORLD', location=(0, 0, 0))
+light_obj = bpy.context.active_object
+
+# 조명 크기 설정
+light_width = 4
+light_height = 4
+light_depth = 10
+
+# 조명 크기 조정
+light_obj.scale.x = light_width
+light_obj.scale.y = light_height
+light_obj.scale.z = light_depth
+
+# 씬 내에서 모든 오브젝트 선택 해제
+bpy.ops.object.select_all(action='DESELECT')
+크기 조정 뿐만 아니라 윗면 삭제 및 모디파이어 작업을 무조건 수행할 것
+
+9. 선풍기 코드 제작시 높이는 핸들의 높이, 두께는 선풍기 날개의 높이, 모터 크기는 날개 고정 원기둥의 지름을 수정할 것. 고정되는 크기는 다음과 같음
+  - 핸들의 지름: 3
+  - 날개고정 원기둥의 지름: 3
+  - 날개의 가로: 5
+  - 날개의 세로: 3
+성공 예제
+import bpy
+
+# 원기둥 생성 (핸들)
+bpy.ops.mesh.primitive_cylinder_add(radius=1, depth=15, enter_editmode=False, align='WORLD', location=(0, 0, 0))
+cylinder_obj = bpy.context.active_object
+
+# 날개 고정 원기둥 생성
+bpy.ops.mesh.primitive_cylinder_add(radius=1, depth=1, enter_editmode=False, align='WORLD', location=(0, -5.5, 0))
+wing_cylinder_obj = bpy.context.active_object
+
+# 상단 면 선택 및 Inset 작업
+bpy.context.view_layer.objects.active = wing_cylinder_obj
+wing_cylinder_obj.select_set(True)
+bpy.ops.object.mode_set(mode='EDIT')
+bpy.ops.mesh.select_mode(type="FACE")
+bpy.ops.mesh.select_all(action='DESELECT')
+bpy.ops.object.mode_set(mode='OBJECT')
+wing_cylinder_obj.data.polygons[30].select = True  # 첫 번째 면 선택
+bpy.ops.object.mode_set(mode='EDIT')
+bpy.ops.mesh.inset(thickness=0.7f5)
+
+# Extrude 작업
+bpy.ops.mesh.extrude_region_move(TRANSFORM_OT_translate={"value":(0, 0, -1)})
+
+# Y좌표 조정
+bpy.ops.mesh.select_all(action='SELECT')
+bpy.ops.transform.translate(value=(0, 0, -0.2))
+
+bpy.ops.object.mode_set(mode='OBJECT')
+
+# 날개 생성
+wing_width = 5
+wing_height = 1
+wing_depth = 1
+spacing = 0.5
+
+for i in range(4):
+    x_pos = i * (wing_width + spacing)
+    bpy.ops.mesh.primitive_cube_add(size=1, enter_editmode=False, align='WORLD', location=(x_pos, -3, wing_depth/2 + 0.5))
+    wing_obj = bpy.context.active_object
+    wing_obj.scale.x = wing_width
+    wing_obj.scale.y = wing_height
+    wing_obj.scale.z = wing_depth
+
+# 씬 내에서 모든 오브젝트 선택 해제
+bpy.ops.object.mode_set(mode='OBJECT')
+bpy.ops.object.select_all(action='DESELECT')
+
+이를 기반으로 작성할 것.
+
+10. 해당 코드는 작성하지 말 것
+bpy.ops.object.light_add()
+light_obj 키워드는 사용하지 말것
+
+해당 조건을 기본 전제로 하고 앞으로 들어올 내용들에 대한 Blender Python 코드를 작성할 것. 지금은 코드를 제작하지 말고 숙지만 할 것
